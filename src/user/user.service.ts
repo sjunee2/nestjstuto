@@ -1,28 +1,43 @@
 import { Injectable } from '@nestjs/common';
+import { UserRepository } from 'src/repositories/user.repository';
+import { UserEntity } from '../entities';
+import { UserResponseDto } from './dtos/user.response.dto';
+import { EmailRequestDto, PasswordRequestDto, UserRequestDto } from './dtos/user.request.dto';
 
 @Injectable()
 export class UserService {
-    users: string[] = ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9', 'user10']
+  constructor(private readonly userRepository: UserRepository) {}
+  async getUsers(): Promise<UserResponseDto[]> {
+    const usersEntity = await this.userRepository.findAll();
+    const users = usersEntity.map((user) => new UserResponseDto(user));
+    return users;
+  }
 
-    getUsers(): string[] {
-        return this.users;
-    }
+  async findByEmail(email: string): Promise<UserEntity> {
+    const userEntity = await this.userRepository.findByEmail(email);
+    return userEntity;
+  }
 
-    async addUser(name: string): Promise<string[]> {
-        if (!this.users.includes(name)) {
-            await this.users.push(name)
-        }
-        return this.users;
-    }
+  async addUser(body: UserRequestDto): Promise<UserResponseDto> {
+    const newUserEntity = await this.userRepository.create(body);
+    const newUser = new UserResponseDto(newUserEntity);
+    return newUser;
+  }
+      
+  async deleteUser(body: EmailRequestDto): Promise<void> {
+    await this.userRepository.deleteByEmail(body.email);
+  }
 
-    async deleteUser(name: string): Promise<string[]> {
-        if (this.users.includes(name)) {
-            await this.users.splice(this.users.indexOf(name), 1)
-        }
-        return this.users;
-    }
+  async updatePassword(body: PasswordRequestDto): Promise<void> {
+    await this.userRepository.updatePassword(body.email, body.password);
+  }
 
-    getUserName(index: number): string {
-        return this.users[index];
-    }
+  async updateToken(email: string, token: string): Promise<void> {
+    await this.userRepository.updateToken(email, token);
+  }
+
+  async findByVal(key: keyof UserEntity, val: any): Promise<UserEntity> {
+    const userEntity = await this.userRepository.findByVal(key, val);
+    return userEntity;
+  }
 }
